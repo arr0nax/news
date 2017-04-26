@@ -1,0 +1,22 @@
+<?php
+function headlinebacklog_menu() {
+  $items = array();
+  $items['history'] = array(
+    'title' => 'History',
+    'page callback' => 'headlinebacklog',
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+function headlinebacklog() {
+
+    $history = db_query("SELECT * FROM news_headlines;");
+    $headlines = '<ul>';
+    foreach($history as $headline) {
+      $headlines .= '<li>'.$headline->headline.'</li>';
+    }
+
+  return $headlines.'</ul>';
+}

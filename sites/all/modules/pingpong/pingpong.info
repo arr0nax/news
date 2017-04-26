@@ -1,0 +1,5 @@
+name = Ping-Pong
+description = count with pings and pongs
+package = Epicodus Examples
+core = 7.x
+files[] = pingpong.module

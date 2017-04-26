@@ -1,0 +1,5 @@
+name = History
+description = Collects history of news using newsapi.org.
+package = clayton's modules
+core = 7.x
+files[] = headlinebacklog.module

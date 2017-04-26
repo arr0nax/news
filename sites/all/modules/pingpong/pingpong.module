@@ -1,0 +1,63 @@
+<?php
+
+function pingpong_menu() {
+  $items['pingpong'] = array(
+    'title' => 'ping some pongs',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('pingpong_form'),
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['pingpong_success_page'] = array(
+    'title' => 'pinged',
+    'page callback' => 'pingponged',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+function pingpong_form() {
+  $form['number'] = array(
+    '#title' => 'number',
+    '#type' => 'textfield',
+    '#description' => t('what do you want to count to?'),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'ping me'
+  );
+
+  return $form;
+}
+
+function pingpong_form_submit($form, &$form_state) {
+  $number = $form_state['values']['number'];
+  $result = [];
+
+  for ($i=1;$i<=$number;$i++) {
+    if ($i % 15 === 0) {
+      $result[] = 'pingpong';
+    } elseif ($i % 5 === 0) {
+      $result[] = 'pong';
+    } elseif ($i % 3 === 0) {
+      $result[] = 'ping';
+    } else {
+      $result[] = $i;
+    }
+  }
+
+  $_SESSION['pingpong_output'] = $result;
+
+  $form_state['redirect'] = 'pingpong_success_page';
+}
+
+function pingponged() {
+  $pong = $_SESSION['pingpong_output'];
+  $result = '';
+  for ($i = 0; $i<count($pong); $i++) {
+    $result .= ' '.$pong[$i];
+  }
+  return $result;
+}

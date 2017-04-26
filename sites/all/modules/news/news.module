@@ -1,0 +1,54 @@
+<?php
+function news_menu() {
+  $items = array();
+  $items['news'] = array(
+    'title' => 'News',
+    'page callback' => 'get_news',
+    'access callback' => TRUE,
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+function get_news() {
+  $hello = 'hello';
+  $curl = curl_init();
+  curl_setopt_array($curl, array(
+    CURLOPT_RETURNTRANSFER => 1,
+    CURLOPT_URL => 'https://newsapi.org/v1/sources',
+    CURLOPT_USERAGENT => 'Codular Sample cURL Request'
+  ));
+
+  $sources = curl_exec($curl);
+  curl_close($curl);
+  $sources = json_decode($sources);
+  if (isset($sources->sources[0])) {
+
+    $sourceNumber = mt_rand(0, count($sources->sources));
+    $source = $sources->sources[$sourceNumber]->id;
+
+    $curl = curl_init();
+    // Set some options - we are passing in a useragent too here
+    curl_setopt_array($curl, array(
+      CURLOPT_RETURNTRANSFER => 1,
+      CURLOPT_URL => 'https://newsapi.org/v1/articles?source='.$source.'&sortBy=latest&apiKey=ccd4623de5dd47dd9c48798e310b4e34',
+      CURLOPT_USERAGENT => 'Codular Sample cURL Request'
+    ));
+    // Send the request & save response to $resp
+    $articles = curl_exec($curl);
+    // Close request to clear up some resources
+    curl_close($curl);
+    $recent_news = json_decode($articles);
+    if (isset($recent_news->articles[0])) {
+
+      $articleNumber = mt_rand(0, count($recent_news->articles));
+      $title = $recent_news->articles[$articleNumber]->title;
+      $cleantitle = str_replace("'", "", $title);
+      // echo $title;
+      db_query("INSERT INTO news_headlines (headline) values ('{$cleantitle}');");
+
+      return $title;
+    }
+  }
+  return "couldn't find any news this time";
+}

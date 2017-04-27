@@ -25,7 +25,7 @@ function get_news() {
     if (isset($sources->sources[0])) {
 
         $sourceNumber = mt_rand(0, count($sources->sources));
-        $source = $sources->sources[3]->id;
+        $source = $sources->sources[11]->id;
 
         $curl = curl_init();
         // Set some options - we are passing in a useragent too here
@@ -45,6 +45,9 @@ function get_news() {
             $article = $recent_news->articles[0];
             $new_article;
             foreach ($article as $key => $val) {
+                if (is_null($val)) {
+                    $val = '';
+                }
                 $val = str_replace("'","`",$val);
                 $new_article[$key] = $val;
             }
@@ -62,7 +65,7 @@ function get_news() {
             }
             global $user;
             $node = new stdClass();
-            $node->title = $article['title'];
+            $node->title = $new_article['title'];
             $node->type = "news_article";
             node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
             $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
@@ -72,11 +75,12 @@ function get_news() {
             $node->comment = 0; // 0 = comments disabled, 1 = read only, 2 = read/write
 
             // Term reference (taxonomy) field
-            $node->field_description = $article['description'];
-            $node->field_author = $article['author'];
-            $node->field_url = $article['url'];
-            $node->field_image_url = $article['url_to_image'];
-            $node->field_published_at = $article['published_at'];
+            $node->field_description['und'][0]['value'] = $article->description;
+            $node->field_author['und'][0]['value'] = $article->author;
+            $node->field_url['und'][0]['value'] = $article->url;
+            $node->field_image_url['und'][0]['value'] = $article->urlToImage;
+            $node->field_published_at['und'][0]['value'] = $article->publishedAt;
+
 
 
             $node = node_submit($node); // Prepare node for saving

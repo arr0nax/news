@@ -12,10 +12,10 @@ function headlinebacklog_menu() {
 
 function headlinebacklog() {
 
-    $history = db_query("SELECT * FROM news_headlines;");
+    $history = db_query("SELECT * FROM news_articles;");
     $headlines = '<ul>';
     foreach($history as $headline) {
-      $headlines .= '<li>'.$headline->headline.'</li>';
+      $headlines .= '<li>'.$headline->title.'</li>';
     }
 
   return $headlines.'</ul>';

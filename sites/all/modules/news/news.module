@@ -2,7 +2,7 @@
 function news_menu() {
     $items = array();
     $items['news'] = array(
-        'title' => 'News',
+        'title' => 'The Latest News',
         'page callback' => 'get_news',
         'access callback' => TRUE,
         'type' => MENU_NORMAL_ITEM,
@@ -82,7 +82,6 @@ function get_news() {
             $node->field_image_url['und'][0]['value'] = $article->urlToImage;
             $node->field_published_at['und'][0]['value'] = $article->publishedAt;
             $node->field_source['und'][0]['value'] = $source;
-
 
 
             $node = node_submit($node); // Prepare node for saving

@@ -1,7 +1,7 @@
 <?php
-function news_menu() {
+function News_menu() {
     $items = array();
-    $items['news'] = array(
+    $items['News'] = array(
         'title' => 'The Latest News',
         'page callback' => 'get_news',
         'access callback' => TRUE,

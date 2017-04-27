@@ -1,54 +1,91 @@
 <?php
 function news_menu() {
-  $items = array();
-  $items['news'] = array(
-    'title' => 'News',
-    'page callback' => 'get_news',
-    'access callback' => TRUE,
-    'type' => MENU_NORMAL_ITEM,
-  );
-  return $items;
+    $items = array();
+    $items['news'] = array(
+        'title' => 'News',
+        'page callback' => 'get_news',
+        'access callback' => TRUE,
+        'type' => MENU_NORMAL_ITEM,
+    );
+    return $items;
 }
 
 function get_news() {
-  $hello = 'hello';
-  $curl = curl_init();
-  curl_setopt_array($curl, array(
-    CURLOPT_RETURNTRANSFER => 1,
-    CURLOPT_URL => 'https://newsapi.org/v1/sources',
-    CURLOPT_USERAGENT => 'Codular Sample cURL Request'
-  ));
-
-  $sources = curl_exec($curl);
-  curl_close($curl);
-  $sources = json_decode($sources);
-  if (isset($sources->sources[0])) {
-
-    $sourceNumber = mt_rand(0, count($sources->sources));
-    $source = $sources->sources[$sourceNumber]->id;
-
+    $hello = 'hello';
     $curl = curl_init();
-    // Set some options - we are passing in a useragent too here
     curl_setopt_array($curl, array(
-      CURLOPT_RETURNTRANSFER => 1,
-      CURLOPT_URL => 'https://newsapi.org/v1/articles?source='.$source.'&sortBy=latest&apiKey=ccd4623de5dd47dd9c48798e310b4e34',
-      CURLOPT_USERAGENT => 'Codular Sample cURL Request'
+        CURLOPT_RETURNTRANSFER => 1,
+        CURLOPT_URL => 'https://newsapi.org/v1/sources',
+        CURLOPT_USERAGENT => 'Codular Sample cURL Request'
     ));
-    // Send the request & save response to $resp
-    $articles = curl_exec($curl);
-    // Close request to clear up some resources
+
+    $sources = curl_exec($curl);
     curl_close($curl);
-    $recent_news = json_decode($articles);
-    if (isset($recent_news->articles[0])) {
+    $sources = json_decode($sources);
+    if (isset($sources->sources[0])) {
 
-      $articleNumber = mt_rand(0, count($recent_news->articles));
-      $title = $recent_news->articles[$articleNumber]->title;
-      $cleantitle = str_replace("'", "", $title);
-      // echo $title;
-      db_query("INSERT INTO news_headlines (headline) values ('{$cleantitle}');");
+        $sourceNumber = mt_rand(0, count($sources->sources));
+        $source = $sources->sources[3]->id;
 
-      return $title;
+        $curl = curl_init();
+        // Set some options - we are passing in a useragent too here
+        curl_setopt_array($curl, array(
+            CURLOPT_RETURNTRANSFER => 1,
+            CURLOPT_URL => 'https://newsapi.org/v1/articles?source='.$source.'&sortBy=latest&apiKey=ccd4623de5dd47dd9c48798e310b4e34',
+            CURLOPT_USERAGENT => 'Codular Sample cURL Request'
+        ));
+        // Send the request & save response to $resp
+        $articles = curl_exec($curl);
+        // Close request to clear up some resources
+        curl_close($curl);
+        $recent_news = json_decode($articles);
+        if (isset($recent_news->articles[0])) {
+
+            $articleNumber = mt_rand(0, count($recent_news->articles));
+            $article = $recent_news->articles[0];
+            $new_article;
+            foreach ($article as $key => $val) {
+                $val = str_replace("'","`",$val);
+                $new_article[$key] = $val;
+            }
+            $author = $new_article['author'];
+            $title = $new_article['title'];
+            $description = $new_article['description'];
+            $url = $new_article['url'];
+            $url_to_image = $new_article['urlToImage'];
+            $published_at = $new_article['publishedAt'];
+            $exists = db_query("SELECT * FROM news_articles WHERE title = '{$title}'");
+            foreach($exists as $exist) {
+                if($exist) {
+                    return '<h1>'.$exist->title.'</h1><br> <p>'.$exist->description.'</p>';
+                }
+            }
+            global $user;
+            $node = new stdClass();
+            $node->title = $article['title'];
+            $node->type = "news_article";
+            node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
+            $node->language = LANGUAGE_NONE; // Or e.g. 'en' if locale is enabled
+            $node->uid = $user->uid;
+            $node->status = 1; //(1 or 0): published or not
+            $node->promote = 1; //(1 or 0): promoted to front page
+            $node->comment = 0; // 0 = comments disabled, 1 = read only, 2 = read/write
+
+            // Term reference (taxonomy) field
+            $node->field_description = $article['description'];
+            $node->field_author = $article['author'];
+            $node->field_url = $article['url'];
+            $node->field_image_url = $article['url_to_image'];
+            $node->field_published_at = $article['published_at'];
+
+
+            $node = node_submit($node); // Prepare node for saving
+            node_save($node);
+            //drupal_set_message( "Node with nid " . $node->nid . " saved!\n");
+            db_query("INSERT INTO news_articles (author,title,description,url,url_to_image,published_at) VALUES ('{$author}','{$title}', '{$description}', '{$url}', '{$url_to_image}', '{$published_at}');");
+
+            return $title;
+        }
     }
-  }
-  return "couldn't find any news this time";
+    return "couldn't find any news this time";
 }

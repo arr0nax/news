@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Sources feature.
+ */
+
+include_once 'sources.features.inc';

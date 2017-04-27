@@ -1,0 +1,14 @@
+name = Sources
+description = List of sources from 150 database entries
+core = 7.x
+package = Features
+dependencies[] = features
+dependencies[] = menu
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[menu_custom][] = main-menu
+features[menu_links][] = main-menu_sources:sources
+features[views_view][] = fields
+features_exclude[dependencies][ctools] = ctools
+project path = sites/all/modules/features

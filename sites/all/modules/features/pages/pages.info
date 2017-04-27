@@ -1,0 +1,12 @@
+name = Pages
+description = Pages for specific news sources
+core = 7.x
+package = Features
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = associated_press
+features[views_view][] = business_insider
+features[views_view][] = fox_sports
+features_exclude[dependencies][ctools] = ctools
+project path = sites/all/modules/features

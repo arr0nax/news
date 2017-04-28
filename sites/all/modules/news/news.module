@@ -7,6 +7,18 @@ function news_menu() {
         'access callback' => TRUE,
         'type' => MENU_NORMAL_ITEM,
     );
+    $items['generate_words'] = array(
+        'title' => 'Generate Words',
+        'page callback' => 'get_words',
+        'access callback' => TRUE,
+        'type' => MENU_NORMAL_ITEM
+    );
+    $items['check_word_frequency'] = array(
+        'title' => 'Check Frequency',
+        'page callback' => 'check_words',
+        'access callback' => TRUE,
+        'type' => MENU_NORMAL_ITEM
+    );
     return $items;
 }
 
@@ -93,4 +105,106 @@ function get_news() {
         }
     }
     return "couldn't find any news this time";
+}
+
+function get_words() {
+    $titleWordArray = [];
+    $descriptionWordArray = [];
+    $hello = 'hello';
+    $curl = curl_init();
+    curl_setopt_array($curl, array(
+        CURLOPT_RETURNTRANSFER => 1,
+        CURLOPT_URL => 'https://newsapi.org/v1/sources',
+        CURLOPT_USERAGENT => 'Codular Sample cURL Request'
+    ));
+
+    $sources = curl_exec($curl);
+    curl_close($curl);
+    $sources = json_decode($sources);
+    if (isset($sources->sources[0])) {
+
+        $sourceNumber = count($sources->sources);
+        echo($sourceNumber. '<hr>');
+        for ($i=0; $i<$sourceNumber; $i++) {
+            $source = $sources->sources[$i]->id;
+            echo($source);
+
+            $curl = curl_init();
+            // Set some options - we are passing in a useragent too here
+            curl_setopt_array($curl, array(
+                CURLOPT_RETURNTRANSFER => 1,
+                CURLOPT_URL => 'https://newsapi.org/v1/articles?source='.$source.'&sortBy=latest&apiKey=ccd4623de5dd47dd9c48798e310b4e34',
+                CURLOPT_USERAGENT => 'Codular Sample cURL Request'
+            ));
+            // Send the request & save response to $resp
+            $articles = curl_exec($curl);
+            // Close request to clear up some resources
+            curl_close($curl);
+
+            $recent_news = json_decode($articles);
+            if ($recent_news->status === 'ok') {
+
+                $articleNumber = count($recent_news->articles);
+                for ($j=0;$j<$articleNumber;$j++){
+                    $newArticleArray[] = [];
+                    foreach ($recent_news->articles[$j] as $key => $val) {
+                        if (is_null($val)) {
+                            $val = '';
+                        }
+                        $val = str_replace("'","`",$val);
+                        $val = preg_replace('/[^A-Za-z0-9\s]/', '', $val);
+                        $val = strtolower($val);
+
+                        if($key === 'title') {
+                            $oneWordArray = explode(" ", $val);
+                            foreach($oneWordArray as $key => $val){
+                                $titleWordArray[] = [$key, $val];
+                                db_query("INSERT INTO raw_words (word,position,source) VALUES ('{$val}','{$key}', '1');");
+                            }
+
+                        }
+                        if($key === 'description') {
+                            $oneWordArray = explode(" ", $val);
+                            foreach($oneWordArray as $key => $val){
+                                $descriptionWordArray[] = [$key, $val];
+                                db_query("INSERT INTO raw_words (word,position,source) VALUES ('{$val}','{$key}', '2');");
+                            }
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return "couldn't find any news this time";
+
+}
+
+function check_words() {
+    $words = db_query('SELECT * FROM raw_words');
+    $wordArray = [];
+    $positionCount = [];
+    // // display all words in order of frequency regardless of position
+    // foreach ($words as $word) {
+    //     if (array_key_exists($word->word, $wordArray)) {
+    //         $wordArray[$word->word] += 1;
+    //     } else {
+    //         $wordArray[$word->word] = 1;
+    //     }
+    // }
+
+    foreach ($words as $word) {
+        if ($word->word === 'trump') {
+            if (array_key_exists($word->position, $positionCount)) {
+                    $positionCount[$word->position] += 1;
+                } else {
+                    $positionCount[$word->position] = 1;
+                }
+        }
+    }
+    arsort($positionCount);
+    echo '<pre>';
+    var_dump($positionCount);
+    echo '</pre>';
 }

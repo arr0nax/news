@@ -147,30 +147,36 @@ function get_words() {
                 $articleNumber = count($recent_news->articles);
                 for ($j=0;$j<$articleNumber;$j++){
                     $newArticleArray[] = [];
-                    foreach ($recent_news->articles[$j] as $key => $val) {
-                        if (is_null($val)) {
-                            $val = '';
-                        }
-                        $val = str_replace("'","`",$val);
-                        $val = preg_replace('/[^A-Za-z0-9\s]/', '', $val);
-                        $val = strtolower($val);
+                    $url = $recent_news->articles[$j]->url;
+                    $exists = db_query("SELECT * FROM raw_words WHERE url = '{$url}'");
+                    foreach($exists as $exist) {
+                        if(!$exist) {
+                            foreach ($recent_news->articles[$j] as $key => $val) {
+                                if (is_null($val)) {
+                                    $val = '';
+                                }
+                                $val = str_replace("'","`",$val);
+                                $val = preg_replace('/[^A-Za-z0-9\s]/', '', $val);
+                                $val = strtolower($val);
+                                if($key === 'title') {
+                                    $oneWordArray = explode(" ", $val);
+                                    foreach($oneWordArray as $key => $val){
+                                        $titleWordArray[] = [$key, $val];
+                                        db_query("INSERT INTO raw_words (word,position,source,url) VALUES ('{$val}','{$key}', '1', '{$url}');");
+                                    }
 
-                        if($key === 'title') {
-                            $oneWordArray = explode(" ", $val);
-                            foreach($oneWordArray as $key => $val){
-                                $titleWordArray[] = [$key, $val];
-                                db_query("INSERT INTO raw_words (word,position,source) VALUES ('{$val}','{$key}', '1');");
+                                }
+                                if($key === 'description') {
+                                    $oneWordArray = explode(" ", $val);
+                                    foreach($oneWordArray as $key => $val){
+                                        $descriptionWordArray[] = [$key, $val];
+                                        db_query("INSERT INTO raw_words (word,position,source,url) VALUES ('{$val}','{$key}', '2', '{$url}');");
+                                    }
+
+                                }
                             }
-
                         }
-                        if($key === 'description') {
-                            $oneWordArray = explode(" ", $val);
-                            foreach($oneWordArray as $key => $val){
-                                $descriptionWordArray[] = [$key, $val];
-                                db_query("INSERT INTO raw_words (word,position,source) VALUES ('{$val}','{$key}', '2');");
-                            }
 
-                        }
                     }
                 }
             }
@@ -185,26 +191,27 @@ function check_words() {
     $words = db_query('SELECT * FROM raw_words');
     $wordArray = [];
     $positionCount = [];
-    // // display all words in order of frequency regardless of position
-    // foreach ($words as $word) {
-    //     if (array_key_exists($word->word, $wordArray)) {
-    //         $wordArray[$word->word] += 1;
-    //     } else {
-    //         $wordArray[$word->word] = 1;
-    //     }
-    // }
-
+    // display all words in order of frequency regardless of position
     foreach ($words as $word) {
-        if ($word->word === 'trump') {
-            if (array_key_exists($word->position, $positionCount)) {
-                    $positionCount[$word->position] += 1;
-                } else {
-                    $positionCount[$word->position] = 1;
-                }
+        if (array_key_exists($word->word, $wordArray)) {
+            $wordArray[$word->word] += 1;
+        } else {
+            $wordArray[$word->word] = 1;
         }
     }
+    // // display frequency of the word trump by position
+    // foreach ($words as $word) {
+    //     if ($word->word === 'trump') {
+    //         if (array_key_exists($word->position, $positionCount)) {
+    //                 $positionCount[$word->position] += 1;
+    //             } else {
+    //                 $positionCount[$word->position] = 1;
+    //             }
+    //     }
+    // }
     arsort($positionCount);
+    arsort($wordArray);
     echo '<pre>';
-    var_dump($positionCount);
+    var_dump($wordArray);
     echo '</pre>';
 }

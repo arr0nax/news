@@ -19,6 +19,13 @@ function News_menu() {
         'access callback' => TRUE,
         'type' => MENU_NORMAL_ITEM
     );
+    $items['draw_news'] = array(
+      'title' => 'Draw word frequency',
+      'description' => 'Uses d3 module to create a sample bar chart',
+      'access callback' => TRUE,
+      'page callback' => 'draw_news',
+      'type' => MENU_NORMAL_ITEM,
+    );
     return $items;
 }
 
@@ -126,8 +133,8 @@ function get_words() {
         $sourceNumber = count($sources->sources);
         echo($sourceNumber. '<hr>');
         for ($i=0; $i<$sourceNumber; $i++) {
+        // for ($i=0; $i<10; $i++) {
             $source = $sources->sources[$i]->id;
-            echo($source);
 
             $curl = curl_init();
             // Set some options - we are passing in a useragent too here
@@ -149,8 +156,9 @@ function get_words() {
                     $newArticleArray[] = [];
                     $url = $recent_news->articles[$j]->url;
                     $exists = db_query("SELECT * FROM raw_words WHERE url = '{$url}'");
-                    foreach($exists as $exist) {
-                        if(!$exist) {
+                    $record = $exists->fetchAssoc();
+
+                        if(!$record) {
                             foreach ($recent_news->articles[$j] as $key => $val) {
                                 if (is_null($val)) {
                                     $val = '';
@@ -177,7 +185,7 @@ function get_words() {
                             }
                         }
 
-                    }
+
                 }
             }
         }
@@ -214,4 +222,45 @@ function check_words() {
     echo '<pre>';
     var_dump($wordArray);
     echo '</pre>';
+}
+
+function draw_news() {
+    $words = db_query('SELECT * FROM raw_words');
+    $wordArray = [];
+    $positionCount = [];
+    // display all words in order of frequency regardless of position
+    foreach ($words as $word) {
+        if (array_key_exists($word->word, $wordArray)) {
+            $wordArray[$word->word] += 1;
+        } else {
+            $wordArray[$word->word] = 1;
+        }
+    }
+    arsort($wordArray);
+    array_splice($wordArray, 500);
+
+  // Temporary data until I get randomization working.
+  $chart = array(
+    'id' => 'visualization',
+    'type' => 'news_library',
+    'legend' => array(
+    ),
+    'rows' => array(
+    ),
+  );
+  //
+  // for ($i = 0; $i < count($chart['rows']); $i++) {
+  //     for($j=0; $j<2; $j++){
+  //         array_push($chart['rows'][$i], rand(1, 70) * rand(1, 70));
+  //     }
+  // }
+  $index = 0;
+  foreach($wordArray as $key => $value) {
+      $chart['legend'][] = $key;
+      $chart['rows'][] = array($key);
+      array_push($chart['rows'][$index], $value);
+      $index++;
+  }
+
+  return d3_draw($chart);
 }
